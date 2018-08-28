@@ -68,6 +68,12 @@ protected:
 
 	void StopFire();
 
+	UFUNCTION(BlueprintCallable)
+	void UpdatePitchAndYaw(float Delta);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SRV_UpdatePitchAndYaw(float Delta);
+
 	UFUNCTION()
 	void OnHealthChanged(USHealthComponent* HealthCompP, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
@@ -82,5 +88,11 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
 	bool bDied;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
+	float Pitch;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
+	float Yaw;
 	
 };

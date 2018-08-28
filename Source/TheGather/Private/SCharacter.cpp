@@ -9,6 +9,7 @@
 #include "TheGather.h"
 #include "SWeapon.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -31,6 +32,8 @@ ASCharacter::ASCharacter()
 	ZoomedFOV = 65;
 	ZoomInterpSpeed = 20.0f;
 	WeaponAttachSocketName = "WeaponSocket";
+	Pitch = 0.0f;
+	Yaw = 0.0f;
 }
 
 // Called when the game starts or when spawned
@@ -101,6 +104,29 @@ void ASCharacter::StopFire()
 	}
 }
 
+void ASCharacter::UpdatePitchAndYaw(float Delta)
+{
+	if (Role == ROLE_Authority)
+	{
+		SRV_UpdatePitchAndYaw(Delta);
+	}
+}
+
+void ASCharacter::SRV_UpdatePitchAndYaw_Implementation(float Delta)
+{
+	FRotator CurrentAim = UKismetMathLibrary::MakeRotator(0.0f, Pitch, Yaw);
+	FRotator TargetAim = UKismetMathLibrary::NormalizedDeltaRotator(GetControlRotation(), GetActorRotation());
+	FRotator InterpAim = UKismetMathLibrary::RInterpTo(CurrentAim, TargetAim, Delta, 15.0f);
+	Pitch = UKismetMathLibrary::ClampAngle(InterpAim.Pitch, -90.0f, 90.0f);
+	Yaw = UKismetMathLibrary::ClampAngle(InterpAim.Yaw, -90.0f, 90.0f);
+	UE_LOG(LogTemp, Warning, TEXT("Pitch: %f, Yaw: %f"), Pitch, Yaw);
+}
+
+bool ASCharacter::SRV_UpdatePitchAndYaw_Validate(float Delta)
+{
+	return true;
+}
+
 void ASCharacter::OnHealthChanged(USHealthComponent* HealthCompP, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
 	if (Health <= 0.0f && !bDied)
@@ -165,5 +191,7 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 
 	DOREPLIFETIME(ASCharacter, CurrentWeapon);
 	DOREPLIFETIME(ASCharacter, bDied);
+	DOREPLIFETIME(ASCharacter, Pitch);
+	DOREPLIFETIME(ASCharacter, Yaw);
 }
 
